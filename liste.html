@@ -44,13 +44,23 @@
     </div>
 
     <script>
-    const passordFraBruker = prompt("Skriv inn passord for tilgang:");
+// Vi sjekker om vi allerede har skrevet inn passordet i denne økten (session)
+let passordFraBruker = sessionStorage.getItem('admin_passord');
 
+if (!passordFraBruker) {
+    passordFraBruker = prompt("Skriv inn passord for tilgang:");
     if (passordFraBruker) {
-        hentBestillinger(passordFraBruker);
-    } else {
-        document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Tilgang nektet.</h1>";
+        // Lagrer passordet i nettleserens minne for denne fanen
+        sessionStorage.setItem('admin_passord', passordFraBruker);
     }
+}
+
+// Sjekk tilgang
+if (passordFraBruker) {
+    hentBestillinger(passordFraBruker);
+} else {
+    document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Tilgang nektet.</h1>";
+}
 
     async function hentBestillinger(nøkkel) {
         try {
