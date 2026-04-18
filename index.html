@@ -80,6 +80,30 @@
     // 1. Vekker serveren umiddelbart
   fetch('https://din-backend-lenke.onrender.com/ping').catch(err => console.log("Vekker server..."));
 
+    // Automatisk utfylling av poststed når postnummer tastes inn
+document.getElementById('postnummer').addEventListener('input', async (e) => {
+    const postnr = e.target.value.trim();
+
+    // Vi sjekker når kunden har tastet nøyaktig 4 siffer
+    if (postnr.length === 4 && !isNaN(postnr)) {
+        try {
+            // Vi bruker Zippopotam (gratis API) for å hente norsk poststed
+            const response = await fetch(`https://api.zippopotam.us/no/${postnr}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                // Henter stedsnavnet fra JSON-svaret og fyller ut feltet
+                const sted = data.places[0]['place name'];
+                document.getElementById('poststed').value = sted;
+            } else {
+                console.log("Postnummer ble ikke funnet");
+            }
+        } catch (error) {
+            console.error("Feil ved henting av poststed:", error);
+        }
+    }
+});
+
     // 2. Sjekk kilde
     const urlParams = new URLSearchParams(window.location.search);
     const erFraQR = urlParams.get('kilde') === 'qr';
