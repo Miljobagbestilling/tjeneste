@@ -55,12 +55,12 @@ if (!passordFraBruker) {
     }
 }
 
-// Sjekk tilgang
-if (passordFraBruker) {
-    hentBestillinger(passordFraBruker);
-} else {
-    document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Tilgang nektet.</h1>";
-}
+// 3. Kjør funksjonen hvis vi har et passord
+    if (passordFraBruker && passordFraBruker !== "null") {
+        hentBestillinger(passordFraBruker);
+    } else {
+        document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Tilgang nektet.</h1>";
+    }
 
     async function hentBestillinger(nøkkel) {
         try {
