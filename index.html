@@ -77,19 +77,22 @@
 </div>
 
 <script>
-    // 1. Sjekk kilde
+    // 1. Vekker serveren umiddelbart
+  fetch('https://din-backend-lenke.onrender.com/ping').catch(err => console.log("Vekker server..."));
+
+    // 2. Sjekk kilde
     const urlParams = new URLSearchParams(window.location.search);
     const erFraQR = urlParams.get('kilde') === 'qr';
 
-    // 2. Finn elementer
+    // 3. Finn elementer
     const prisListeElement = document.getElementById('pris-liste');
     const rabattNotis = document.getElementById('rabatt-notis');
 
-    // 3. Definer priser
+    // 4. Definer priser
     const standardPris = 590;
     const qrRabatt = 100;
 
-    // 4. Oppdater utseende basert på kilde
+    // 5. Oppdater utseende basert på kilde
     if (erFraQR) {
         rabattNotis.style.display = 'block';
         prisListeElement.innerHTML = `
@@ -115,9 +118,14 @@
         `;
     }
 
-    // 5. Håndter innsending av skjema
+    // 6. Håndter innsending av skjema
     document.getElementById('bestillingsSkjema').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const knapp = event.target.querySelector('button[type="submit"]');
+    knapp.innerText = "Sender bestilling... Vennligst vent";
+    knapp.disabled = true;
+    knapp.style.backgroundColor = "#ccc";    
 
     const data = {
         firmaNavn: document.getElementById('firmaNavn').value,
@@ -154,6 +162,22 @@
         }
     });
 </script>
-
+document.getElementById('postnummer').addEventListener('input', async (e) => {
+    const pnr = e.target.value;
+    
+    // Når det er skrevet nøyaktig 4 siffer
+    if (pnr.length === 4) {
+        try {
+            const response = await fetch(`https://api.bring.com/shippingguide/v2/postalcode.json?clientUrl=dinnettside.no&pnr=${pnr}`);
+            const data = await response.json();
+            
+            if (data.valid) {
+                document.getElementById('poststed').value = data.result;
+            }
+        } catch (err) {
+            console.error("Kunne ikke hente poststed", err);
+        }
+    }
+});
 </body>
 </html>
