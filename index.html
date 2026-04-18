@@ -70,11 +70,14 @@
             </div>
         </div>
         
-        // Ta/laste opp bilder
-        <label for="bilde">Last opp bilde (valgfritt):</label>
-        <input type="file" id="bilde" accept="image/*" capture="environment">
-        <small>Ta et bilde av baggene eller last opp fra galleri.</small>
-        
+        // Laste opp bilder
+
+        <div style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #ccc;">
+        <label for="bilde" style="display: block; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Legg ved bilde av baggene (valgfritt):</label>
+        <input type="file" id="bilde" accept="image/*" capture="environment" style="border: none; padding: 5px;">
+        <small style="color: #666; display: block; margin-top: 5px;">Dette hjelper oss å finne baggene raskere.</small>
+        </div>
+       
         <textarea id="melding" rows="4" placeholder="Beskrivelse av hentested eller annen nyttig informasjon"></textarea>
         
         <button type="submit" id="bestillKnapp">Bestill henting</button>
@@ -148,20 +151,21 @@
         }
 
         const data = {
-            firmaNavn: document.getElementById('firmaNavn').value,
-            kontaktperson: document.getElementById('kontaktperson').value,
-            orgNr: document.getElementById('orgNr').value,
-            telefon: document.getElementById('telefon').value,
-            epost: document.getElementById('epost').value,
-            adresse: document.getElementById('adresse').value,
-            postnummer: document.getElementById('postnummer').value,
-            poststed: document.getElementById('poststed').value,
-            antallSmall: document.getElementById('antallSmall').value,
-            antallMedium: document.getElementById('antallMedium').value,
-            antallLarge: document.getElementById('antallLarge').value,
-            melding: document.getElementById('melding').value,
-            fraQR: erFraQR
-        };
+    firmaNavn: document.getElementById('firmaNavn').value,
+    kontaktperson: document.getElementById('kontaktperson').value,
+    orgNr: document.getElementById('orgNr').value,
+    telefon: document.getElementById('telefon').value,
+    epost: document.getElementById('epost').value,
+    adresse: document.getElementById('adresse').value,
+    postnummer: document.getElementById('postnummer').value,
+    poststed: document.getElementById('poststed').value,
+    antallSmall: document.getElementById('antallSmall').value,
+    antallMedium: document.getElementById('antallMedium').value,
+    antallLarge: document.getElementById('antallLarge').value,
+    melding: document.getElementById('melding').value,
+    fraQR: erFraQR,
+    bilde: bildeData  
+};
 
         try {
             const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
