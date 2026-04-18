@@ -55,8 +55,11 @@ strong { color: #333; }
 
     async function hentBestillinger() {
         try {
-            const response = await fetch('https://miljobag-backend.onrender.com/alle-bestillinger');
-            let data = await response.json();
+            const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
+            headers: {
+            'x-auth-key': 'f98vudsu+9ad'
+            }
+    });
             
             // Sorter etter postnummer
             data.sort((a, b) => (a.postnummer || "").localeCompare(b.postnummer || ""));
