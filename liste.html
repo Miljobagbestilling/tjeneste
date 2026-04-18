@@ -65,6 +65,7 @@
             }
 
             const data = await respons.json();
+            console.log("Data mottatt fra server:", data); // Denne linjen er ny
             
             // Sorter etter postnummer
             data.sort((a, b) => (a.postnummer || "").localeCompare(b.postnummer || ""));
