@@ -16,6 +16,7 @@
         input, textarea { width: 100%; margin: 5px 0; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
         button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; font-weight: bold; }
         button:hover { background: #218838; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -31,144 +32,117 @@
                 <th>Pris per stk</th>
             </tr>
         </thead>
-        <tbody id="pris-liste">
-            </tbody>
+        <tbody id="pris-liste"></tbody>
     </table>
 
     <p id="rabatt-notis" class="rabatt-notis">🎁 QR-rabatt aktivert!</p>
 
     <form id="bestillingsSkjema">
-    <input type="text" id="firmaNavn" placeholder="Firmanavn / Navn" required>
-    <input type="text" id="kontaktperson" placeholder="Navn på kontaktperson" required>
-    <input type="text" id="orgNr" placeholder="Organisasjonsnummer">
-    
-    <input type="tel" id="telefon" placeholder="Deres telefonnummer" required>
-    <input type="email" id="epost" placeholder="Deres e-postadresse" required>
-    
-    <input type="text" id="adresse" placeholder="Adresse for henting" required>
-    <div style="display: flex; gap: 10px;">
-        <input type="text" id="postnummer" name="postnummer" placeholder="Postnr" style="flex: 1;" required>
-        <input type="text" id="poststed" name="poststed" placeholder="Poststed" style="flex: 2;" required>
-    </div>
+        <input type="text" id="firmaNavn" placeholder="Firmanavn / Navn" required>
+        <input type="text" id="kontaktperson" placeholder="Navn på kontaktperson" required>
+        <input type="text" id="orgNr" placeholder="Organisasjonsnummer">
+        
+        <input type="tel" id="telefon" placeholder="Deres telefonnummer" required>
+        <input type="email" id="epost" placeholder="Deres e-postadresse" required>
+        
+        <input type="text" id="adresse" placeholder="Adresse for henting" required>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="postnummer" name="postnummer" placeholder="Postnr" style="flex: 1;" required>
+            <input type="text" id="poststed" name="poststed" placeholder="Poststed" style="flex: 2;" required>
+        </div>
 
-  <label style="display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Antall bagger som skal hentes:</label>
+        <label style="display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Antall bagger som skal hentes:</label>
 
-<div style="display: flex; gap: 10px; margin-bottom: 10px;">
-    <div style="flex: 1; text-align: center;">
-        <label for="antallSmall" style="font-size: 0.8em; color: #666;">Small</label>
-        <input type="number" id="antallSmall" min="0" value="0" style="text-align: center; margin-top: 5px;">
-    </div>
-    
-    <div style="flex: 1; text-align: center;">
-        <label for="antallMedium" style="font-size: 0.8em; color: #666;">Medium</label>
-        <input type="number" id="antallMedium" min="0" value="0" style="text-align: center; margin-top: 5px;">
-    </div>
-    
-    <div style="flex: 1; text-align: center;">
-        <label for="antallLarge" style="font-size: 0.8em; color: #666;">Large</label>
-        <input type="number" id="antallLarge" min="0" value="0" style="text-align: center; margin-top: 5px;">
-    </div>
-</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div style="flex: 1; text-align: center;">
+                <label for="antallSmall" style="font-size: 0.8em; color: #666;">Small</label>
+                <input type="number" id="antallSmall" min="0" value="0" style="text-align: center; margin-top: 5px;">
+            </div>
+            
+            <div style="flex: 1; text-align: center;">
+                <label for="antallMedium" style="font-size: 0.8em; color: #666;">Medium</label>
+                <input type="number" id="antallMedium" min="0" value="0" style="text-align: center; margin-top: 5px;">
+            </div>
+            
+            <div style="flex: 1; text-align: center;">
+                <label for="antallLarge" style="font-size: 0.8em; color: #666;">Large</label>
+                <input type="number" id="antallLarge" min="0" value="0" style="text-align: center; margin-top: 5px;">
+            </div>
+        </div>
 
-    <textarea id="melding" rows="4" placeholder="Beskrivelse av hentested eller annen nyttig informasjon (f.eks. bagen står bak garasjen)"></textarea>
-    
-    <button type="submit">Bestill henting</button>
-</form>
+        <textarea id="melding" rows="4" placeholder="Beskrivelse av hentested eller annen nyttig informasjon"></textarea>
+        
+        <button type="submit" id="bestillKnapp">Bestill henting</button>
+    </form>
 </div>
 
 <script>
-    // 1. Vekker serveren umiddelbart
-  fetch('https://din-backend-lenke.onrender.com/ping').catch(err => console.log("Vekker server..."));
+    // 1. Vekker serveren umiddelbart (BYTT UT LENKEN HER)
+    fetch('https://miljobag-backend.onrender.com/ping').catch(e => console.log("Vekker server..."));
 
-    // Automatisk utfylling av poststed når postnummer tastes inn
-document.getElementById('postnummer').addEventListener('input', async (e) => {
-    const postnr = e.target.value.trim();
-
-    // Vi sjekker når kunden har tastet nøyaktig 4 siffer
-    if (postnr.length === 4 && !isNaN(postnr)) {
-        try {
-            // Vi bruker Zippopotam (gratis API) for å hente norsk poststed
-            const response = await fetch(`https://api.zippopotam.us/no/${postnr}`);
-            
-            if (response.ok) {
-                const data = await response.json();
-                // Henter stedsnavnet fra JSON-svaret og fyller ut feltet
-                const sted = data.places[0]['place name'];
-                document.getElementById('poststed').value = sted;
-            } else {
-                console.log("Postnummer ble ikke funnet");
+    // Automatisk utfylling av poststed
+    document.getElementById('postnummer').addEventListener('input', async (e) => {
+        const pnr = e.target.value.trim();
+        if (pnr.length === 4 && !isNaN(pnr)) {
+            try {
+                const response = await fetch(`https://api.zippopotam.us/no/${pnr}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('poststed').value = data.places[0]['place name'];
+                }
+            } catch (err) {
+                console.error("Kunne ikke hente poststed", err);
             }
-        } catch (error) {
-            console.error("Feil ved henting av poststed:", error);
         }
-    }
-});
+    });
 
-    // 2. Sjekk kilde
+    // Sjekk kilde (QR)
     const urlParams = new URLSearchParams(window.location.search);
     const erFraQR = urlParams.get('kilde') === 'qr';
-
-    // 3. Finn elementer
     const prisListeElement = document.getElementById('pris-liste');
     const rabattNotis = document.getElementById('rabatt-notis');
 
-    // 4. Definer priser
     const standardPris = 590;
     const qrRabatt = 100;
 
-    // 5. Oppdater utseende basert på kilde
     if (erFraQR) {
         rabattNotis.style.display = 'block';
         prisListeElement.innerHTML = `
-            <tr>
-                <td>1 - 3 bagger</td>
-                <td><span class="original-pris">${standardPris},-</span><span class="rabatt-pris">${standardPris - qrRabatt},-</span></td>
-            </tr>
-            <tr>
-                <td>4+ bagger</td>
-                <td><span class="original-pris">490,-</span><span class="rabatt-pris">390,-</span></td>
-            </tr>
+            <tr><td>1 - 3 bagger</td><td><span class="original-pris">${standardPris},-</span><span class="rabatt-pris">${standardPris - qrRabatt},-</span></td></tr>
+            <tr><td>4+ bagger</td><td><span class="original-pris">490,-</span><span class="rabatt-pris">390,-</span></td></tr>
         `;
     } else {
         prisListeElement.innerHTML = `
-            <tr>
-                <td>1 - 3 bagger</td>
-                <td>${standardPris},-</td>
-            </tr>
-            <tr>
-                <td>4+ bagger</td>
-                <td>490,-</td>
-            </tr>
+            <tr><td>1 - 3 bagger</td><td>${standardPris},-</td></tr>
+            <tr><td>4+ bagger</td><td>490,-</td></tr>
         `;
     }
 
-    // 6. Håndter innsending av skjema
+    // Innsending av skjema
     document.getElementById('bestillingsSkjema').addEventListener('submit', async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    const knapp = event.target.querySelector('button[type="submit"]');
-    knapp.innerText = "Sender bestilling... Vennligst vent";
-    knapp.disabled = true;
-    knapp.style.backgroundColor = "#ccc";    
+        const knapp = document.getElementById('bestillKnapp');
+        knapp.innerText = "Sender bestilling... Vennligst vent";
+        knapp.disabled = true;
 
-    const data = {
-        firmaNavn: document.getElementById('firmaNavn').value,
-        kontaktperson: document.getElementById('kontaktperson').value,
-        orgNr: document.getElementById('orgNr').value,
-        telefon: document.getElementById('telefon').value,
-        epost: document.getElementById('epost').value,
-        adresse: document.getElementById('adresse').value,
-        postnummer: document.getElementById('postnummer').value,
-        poststed: document.getElementById('poststed').value,
-        antallSmall: document.getElementById('antallSmall').value,
-        antallMedium: document.getElementById('antallMedium').value,
-        antallLarge: document.getElementById('antallLarge').value,
-        melding: document.getElementById('melding').value,
-        fraQR: erFraQR // Variabelen vi definerte tidligere
-    };
+        const data = {
+            firmaNavn: document.getElementById('firmaNavn').value,
+            kontaktperson: document.getElementById('kontaktperson').value,
+            orgNr: document.getElementById('orgNr').value,
+            telefon: document.getElementById('telefon').value,
+            epost: document.getElementById('epost').value,
+            adresse: document.getElementById('adresse').value,
+            postnummer: document.getElementById('postnummer').value,
+            poststed: document.getElementById('poststed').value,
+            antallSmall: document.getElementById('antallSmall').value,
+            antallMedium: document.getElementById('antallMedium').value,
+            antallLarge: document.getElementById('antallLarge').value,
+            melding: document.getElementById('melding').value,
+            fraQR: erFraQR
+        };
 
         try {
-            // Husk å bytte ut 'localhost' med din ekte adresse når du legger den ut på nett!
             const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -182,26 +156,12 @@ document.getElementById('postnummer').addEventListener('input', async (e) => {
                 alert('Noe gikk galt på serveren.');
             }
         } catch (feil) {
-            alert('Kunne ikke koble til serveren. Er den startet?');
+            alert('Kunne ikke koble til serveren.');
+        } finally {
+            knapp.disabled = false;
+            knapp.innerText = "Bestill henting";
         }
     });
 </script>
-document.getElementById('postnummer').addEventListener('input', async (e) => {
-    const pnr = e.target.value;
-    
-    // Når det er skrevet nøyaktig 4 siffer
-    if (pnr.length === 4) {
-        try {
-            const response = await fetch(`https://api.bring.com/shippingguide/v2/postalcode.json?clientUrl=dinnettside.no&pnr=${pnr}`);
-            const data = await response.json();
-            
-            if (data.valid) {
-                document.getElementById('poststed').value = data.result;
-            }
-        } catch (err) {
-            console.error("Kunne ikke hente poststed", err);
-        }
-    }
-});
 </body>
 </html>
