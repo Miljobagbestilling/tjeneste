@@ -69,7 +69,12 @@
                 <input type="number" id="antallLarge" min="0" value="0" style="text-align: center; margin-top: 5px;">
             </div>
         </div>
-
+        
+        // Ta/laste opp bilder
+        <label for="bilde">Last opp bilde (valgfritt):</label>
+        <input type="file" id="bilde" accept="image/*" capture="environment">
+        <small>Ta et bilde av baggene eller last opp fra galleri.</small>
+        
         <textarea id="melding" rows="4" placeholder="Beskrivelse av hentested eller annen nyttig informasjon"></textarea>
         
         <button type="submit" id="bestillKnapp">Bestill henting</button>
@@ -77,7 +82,17 @@
 </div>
 
 <script>
-    // 1. Vekker serveren umiddelbart (BYTT UT LENKEN HER)
+    // Funksjon for å gjøre bilde om til tekst (Base64)
+    const lesBilde = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        });
+    };
+
+    // 1. Vekker serveren umiddelbart
     fetch('https://miljobag-backend.onrender.com/ping').catch(e => console.log("Vekker server..."));
 
     // Automatisk utfylling av poststed
@@ -125,6 +140,12 @@
         const knapp = document.getElementById('bestillKnapp');
         knapp.innerText = "Sender bestilling... Vennligst vent";
         knapp.disabled = true;
+
+        const bildeFil = document.getElementById('bilde').files[0];
+        let bildeData = "";
+        if (bildeFil) {
+            bildeData = await lesBilde(bildeFil);
+        }
 
         const data = {
             firmaNavn: document.getElementById('firmaNavn').value,
