@@ -44,26 +44,25 @@
     </div>
 
     <script>
-    const passordInput = prompt("Skriv inn passord for tilgang:");
-    const RIKTIG_PASSORD = "miljobag2024";
+const passordInput = prompt("Skriv inn passord for tilgang:");
 
-    if (passordInput !== RIKTIG_PASSORD) {
-        alert("Feil passord. Tilgang nektet.");
-        document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Ingen tilgang.</h1>";
-    } else {
-        hentBestillinger();
-    }
+// Vi sjekker ikke lenger "if passord === ..." her. 
+// Vi bare prøver å hente data med det passordet brukeren ga oss.
+hentBestillinger(passordInput); 
 
-    async function hentBestillinger() {
-        try {
-            const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
-                headers: {
-                    'x-auth-key': 'f98vudsu+9ad'
-                }
-            });
+async function hentBestillinger(nøkkel) {
+    try {
+        const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
+            headers: {
+                'x-auth-key': nøkkel // Her sender vi det brukeren skrev i prompten
+            }
+        });
 
-            if (!respons.ok) throw new Error("Kunne ikke hente data");
-
+        if (!respons.ok) {
+            alert("Feil passord eller ingen tilgang.");
+            document.body.innerHTML = "<h1>Tilgang nektet</h1>";
+            return;
+        }
             // FIKSET: Du må hente ut selve dataen fra responsen
             const data = await respons.json();
             
