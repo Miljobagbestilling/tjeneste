@@ -54,6 +54,8 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js');
   }
+
+  
 </script>
 
 </head>
@@ -61,7 +63,7 @@
     <div class="admin-container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h1>Sjåfør-liste</h1>
-            <a href="admin.html" style="text-decoration: none; color: #666; font-size: 14px;">⬅️ Tilbake til kontor</a>
+            <button onclick="hentData()" style="padding: 10px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">🔄 Oppdater</button>
         </div>
 
         <button onclick="lagKjørerute()" class="rute-hovedknapp">🗺️ Lag kjørerute (neste 10 stopp)</button>
@@ -82,17 +84,54 @@
     </div>
 
     <script>
-    let passordFraBruker = sessionStorage.getItem('admin_passord');
-    let alleData = [];
+        // Bruker localStorage i stedet for sessionStorage for å huske passordet "evig"
+let passordFraBruker = localStorage.getItem('admin_passord');
 
-    if (!passordFraBruker) {
-        passordFraBruker = prompt("Passord for sjåfør-tilgang:");
-        if (passordFraBruker) sessionStorage.setItem('admin_passord', passordFraBruker);
-    }
-
+if (!passordFraBruker) {
+    passordFraBruker = prompt("Skriv inn passord (dette vil bli husket):");
     if (passordFraBruker) {
-        hentData();
+        localStorage.setItem('admin_passord', passordFraBruker);
     }
+}
+
+if (passordFraBruker) {
+    hentData();
+}
+
+async function hentData() {
+    const loadingDiv = document.getElementById('loading');
+    const tableEl = document.getElementById('driver-tabell'); // eller 'admin-tabell'
+    
+    loadingDiv.style.display = 'block';
+    loadingDiv.innerText = "Oppdaterer liste...";
+
+    try {
+        const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
+            headers: { 'x-auth-key': passordFraBruker }
+        });
+        
+        if (!respons.ok) {
+            // Hvis passordet er feil, slett det lagrede passordet så brukeren kan prøve på nytt
+            localStorage.removeItem('admin_passord');
+            throw new Error("Feil tilgang");
+        }
+
+        alleData = await respons.json();
+        
+        // Sortering (behold din eksisterende sortering her)
+        alleData.sort((a, b) => {
+            if (a.postnummer !== b.postnummer) return a.postnummer.localeCompare(b.postnummer);
+            return a.adresse.localeCompare(b.adresse);
+        });
+
+        oppdaterTabell();
+        loadingDiv.style.display = 'none';
+        tableEl.style.display = 'table';
+    } catch (err) {
+        loadingDiv.innerText = "Feil: " + err.message + ". Prøv å laste siden på nytt.";
+        console.error(err);
+    }
+}
 
     async function hentData() {
         try {
@@ -184,4 +223,8 @@
     }
     </script>
 </body>
+
+<p style="text-align:center; margin-top:50px;">
+    <small onclick="localStorage.removeItem('admin_passord'); location.reload();" style="color:red; cursor:pointer;">Slett lagret passord / Logg ut</small>
+</p>
 </html>
