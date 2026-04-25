@@ -13,7 +13,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": ".",
+  "start_url": "./driver.html",
   "display": "standalone",
   "theme_color": "#343a40",
   "background_color": "#f4f4f4"
