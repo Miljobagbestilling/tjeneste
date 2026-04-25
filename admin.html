@@ -2,51 +2,53 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Bestillingsoversikt - Miljøbag Admin</title>
+    <title>Kontor Oversikt - Miljøbag</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
         .admin-container { 
             background: white; 
             padding: 20px; 
             border-radius: 10px; 
-            max-width: 1300px; 
+            max-width: 1200px; 
             margin: auto; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
         }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #28a745; color: white; }
+        th { background-color: #343a40; color: white; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .status-knapp { background: #ffc107; border: none; padding: 8px 12px; border-radius: 3px; cursor: pointer; font-weight: bold; }
-        td { vertical-align: top; line-height: 1.4; }
-        small { color: #555; display: inline-block; margin-top: 4px; }
-        strong { color: #333; }
-        .hentet-rad { background-color: #e9ecef !important; color: #6c757d; }
+        
+        /* Status-farger */
+        .status-hentet { color: #28a745; font-weight: bold; }
+        .status-venter { color: #dc3545; font-weight: bold; }
+        .hentet-rad { background-color: #f0f0f0 !important; opacity: 0.8; }
+
         .bilde-knapp { 
-            margin-top: 8px; 
             cursor: pointer; 
             background: #eee; 
             border: 1px solid #ccc; 
             border-radius: 4px; 
-            padding: 5px 10px; 
+            padding: 4px 8px; 
             font-size: 12px; 
-            display: block;
         }
-        .bilde-knapp:hover { background: #ddd; }
     </style>
 </head>
 <body>
     <div class="admin-container">
-        <h1>Bestillinger for Miljøbag</h1>
-        <div id="loading">Henter bestillinger...</div>
-        <table id="bestilling-tabell" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Kontor-oversikt</h1>
+            <a href="driver.html" style="text-decoration: none; color: #007bff; font-weight: bold;">➡️ Sjåfør-visning</a>
+        </div>
+        
+        <div id="loading">Henter data...</div>
+        <table id="admin-tabell" style="display:none;">
             <thead>
                 <tr>
                     <th>Dato</th>
-                    <th>Kunde & Faktura-info</th>
-                    <th>Adresse & Sted</th>
-                    <th>Bestilling (S/M/L)</th>
-                    <th>Melding / Kanal</th>
+                    <th>Kunde</th>
+                    <th>Adresse</th>
+                    <th>Bestilling</th>
+                    <th>Bilde / Melding</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -55,139 +57,75 @@
     </div>
 
     <script>
-    // 1. PASSORD-HÅNDTERING (Sjekker om du allerede er logget inn i denne fanen)
     let passordFraBruker = sessionStorage.getItem('admin_passord');
 
-    if (!passordFraBruker || passordFraBruker === "null") {
-        const input = prompt("Skriv inn passord for tilgang:");
-        if (input) {
-            passordFraBruker = input;
-            sessionStorage.setItem('admin_passord', input);
-        }
+    if (!passordFraBruker) {
+        passordFraBruker = prompt("Passord for kontortilgang:");
+        if (passordFraBruker) sessionStorage.setItem('admin_passord', passordFraBruker);
     }
 
-    if (passordFraBruker && passordFraBruker !== "null") {
-        hentBestillinger(passordFraBruker);
-    } else {
-        document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Tilgang nektet. Oppdater siden for å prøve igjen.</h1>";
+    if (passordFraBruker) {
+        hentData();
     }
 
-    // 2. HENT DATA FRA SERVEREN
-    async function hentBestillinger(nøkkel) {
+    async function hentData() {
         try {
             const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
-                headers: { 'x-auth-key': nøkkel }
+                headers: { 'x-auth-key': passordFraBruker }
             });
 
-            if (!respons.ok) {
-                alert("Feil passord eller uautorisert tilgang.");
-                sessionStorage.removeItem('admin_passord'); // Sletter feil passord fra minnet
-                location.reload();
-                return;
-            }
+            if (!respons.ok) throw new Error("Feil tilgang");
 
             const data = await respons.json();
             
-            // Sorter etter postnummer
-            data.sort((a, b) => (a.postnummer || "").localeCompare(b.postnummer || ""));
-            
+            // Sorter etter dato (nyeste øverst for kontoret)
+            data.sort((a, b) => new Date(b.dato) - new Date(a.dato));
+
             const tbody = document.getElementById('tabell-body');
             document.getElementById('loading').style.display = 'none';
-            document.getElementById('bestilling-tabell').style.display = 'table';
+            document.getElementById('admin-tabell').style.display = 'table';
             tbody.innerHTML = "";
 
             data.forEach(b => {
                 const dato = new Date(b.dato).toLocaleDateString('no-NO');
-                const adresseFull = `${b.adresse}, ${b.postnummer} ${b.poststed}`;
-                const kartURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseFull)}`;
-                
                 const erHentet = b.hentet === true;
+                
+                const statusTekst = erHentet ? 
+                    '<span class="status-hentet">✅ Hentet</span>' : 
+                    '<span class="status-venter">⏳ Venter</span>';
+
                 const radStil = erHentet ? 'class="hentet-rad"' : '';
-                const kanalStatus = b.fraQR ? '📱 QR' : '💻 Web';
-
-                // Bilde-knapp logikk
-                const bildeKnapp = b.bilde ? 
-                    `<button class="bilde-knapp" onclick="visBilde('${b.bilde}')">🖼️ Se bilde</button>` : 
-                    '';
-
-                const kundeInfo = `
-                    <strong>${b.firmaNavn || b.kontaktperson}</strong><br>
-                    <small>
-                        ${b.epost}<br>
-                        Org: ${b.orgNr || 'Privat'}<br>
-                        Tlf: ${b.telefon}
-                    </small>
-                `;
-
-                const bagDetaljer = `${b.antallSmall || 0}S / ${b.antallMedium || 0}M / ${b.antallLarge || 0}L`;
-                const knappTekst = erHentet ? '↩️ Angre' : 'Marker hentet';
-                const knappStil = erHentet ? 'style="background: #6c757d; color: white;"' : '';
 
                 const rad = `
                     <tr ${radStil}>
                         <td>${dato}</td>
                         <td>
-                            ${kundeInfo}<br>
-                            <a href="tel:${b.telefon}" style="display: inline-block; margin-top: 5px; padding: 5px; background: #eee; border-radius: 5px; text-decoration: none; color: black; font-size: 12px;">📞 Ring</a>
+                            <strong>${b.firmaNavn || b.kontaktperson}</strong><br>
+                            <small>${b.telefon}</small>
                         </td>
+                        <td>${b.adresse}, ${b.postnummer} ${b.poststed}</td>
+                        <td>${b.antallSmall}S / ${b.antallMedium}M / ${b.antallLarge}L</td>
                         <td>
-                            <a href="${kartURL}" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">📍 ${adresseFull}</a>
+                            ${b.bilde ? `<button class="bilde-knapp" onclick="visBilde('${b.bilde}')">🖼️ Se bilde</button>` : ''}
+                            <div style="font-size: 11px; color: #666; margin-top: 5px;">${b.melding || '-'}</div>
                         </td>
-                        <td><strong>${bagDetaljer}</strong></td>
-                        <td>
-                            <small>${b.melding || '-'}</small><br>
-                            <strong>${kanalStatus}</strong>
-                            ${bildeKnapp}
-                        </td>
-                        <td>
-                            <button class="status-knapp" ${knappStil} onclick="markerSomHentet('${b._id}')">
-                                ${knappTekst}
-                            </button>
-                        </td>
+                        <td>${statusTekst}</td>
                     </tr>`;
                 tbody.innerHTML += rad;
             });
-            
-        } catch (err) {
-            console.error(err);
-            document.getElementById('loading').innerText = 'Kunne ikke koble til serveren.';
-        }
 
-        // Oppdaterer dataene automatisk hvert 2. minutt (120000 millisekunder)
-        setTimeout(() => {
-        hentBestillinger(passordFraBruker);
-        }, 120000);
+        } catch (err) {
+            document.getElementById('loading').innerText = "Kunne ikke hente data. Sjekk passord.";
+        }
     }
 
-    // 3. FUNKSJON FOR Å VISE BILDE
     function visBilde(base64Data) {
-        const bildeVindu = window.open("");
-        bildeVindu.document.write(`
-            <html>
-                <head><title>Bilde fra kunde</title></head>
-                <body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh;">
-                    <img src="${base64Data}" style="max-width:100%; max-height:100%; object-fit:contain;">
-                </body>
-            </html>
-        `);
+        const win = window.open("");
+        win.document.write(`<img src="${base64Data}" style="max-width:100%;">`);
     }
 
-    // 4. MARKER SOM HENTET
-    async function markerSomHentet(id) {
-        try {
-            const response = await fetch(`https://miljobag-backend.onrender.com/api/bestilling/${id}/status`, {
-                method: 'PATCH',
-                headers: { 'x-auth-key': passordFraBruker }
-            });
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Kunne ikke oppdatere. Prøv passordet på nytt.');
-            }
-        } catch (err) {
-            alert('Tilkoblingsfeil.');
-        }
-    }
-</script>
+    // Auto-oppdater hvert 5. minutt for å se sjåførens fremdrift
+    setInterval(hentData, 300000);
+    </script>
 </body>
 </html>
