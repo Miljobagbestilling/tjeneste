@@ -42,6 +42,18 @@
         a.kart-lenke { color: #007bff; text-decoration: none; font-weight: bold; }
         .kilde-tag { font-size: 10px; padding: 2px 5px; border-radius: 3px; background: #e9ecef; color: #495057; font-weight: bold; }
     </style>
+
+    <link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="apple-touch-icon" href="logo.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+
 </head>
 <body>
     <div class="admin-container">
