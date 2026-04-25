@@ -20,7 +20,6 @@
         
         .hentet-rad { background-color: #f0f0f0 !important; opacity: 0.6; }
         
-        /* Knapper for sjåfør */
         .rute-hovedknapp {
             width: 100%; padding: 15px; background: #007bff; color: white; 
             border: none; border-radius: 8px; font-size: 16px; font-weight: bold; 
@@ -34,13 +33,14 @@
         }
         .ring-knapp {
             display: inline-block; padding: 6px 10px; background: #28a745; 
-            color: white; text-decoration: none; border-radius: 4px; font-size: 12px;
+            color: white; text-decoration: none; border-radius: 4px; font-size: 11px;
         }
         .bilde-knapp { 
             cursor: pointer; background: #eee; border: 1px solid #ccc; 
             border-radius: 4px; padding: 4px 8px; font-size: 12px; 
         }
         a.kart-lenke { color: #007bff; text-decoration: none; font-weight: bold; }
+        .kilde-tag { font-size: 10px; padding: 2px 5px; border-radius: 3px; background: #e9ecef; color: #495057; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -59,7 +59,7 @@
                     <th>Kunde</th>
                     <th>Adresse (Kart)</th>
                     <th>Bagger</th>
-                    <th>Info/Bilde</th>
+                    <th>Info / Kilde</th>
                     <th>Handling</th>
                 </tr>
             </thead>
@@ -89,7 +89,6 @@
             
             alleData = await respons.json();
             
-            // Sortering for sjåfør: Postnummer først, så adresse
             alleData.sort((a, b) => {
                 if (a.postnummer !== b.postnummer) return a.postnummer.localeCompare(b.postnummer);
                 return a.adresse.localeCompare(b.adresse);
@@ -112,6 +111,9 @@
             const radStil = erHentet ? 'class="hentet-rad"' : '';
             const adresseFull = `${b.adresse}, ${b.postnummer} ${b.poststed}`;
             const kartURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseFull)}`;
+            
+            // Kilde-logikk
+            const kildeTekst = b.fraQR ? '📱 QR' : '💻 Web';
 
             const rad = `
                 <tr ${radStil}>
@@ -125,14 +127,15 @@
                     </td>
                     <td><strong>${b.antallSmall}S / ${b.antallMedium}M / ${b.antallLarge}L</strong></td>
                     <td>
-                        ${b.bilde ? `<button class="bilde-knapp" onclick="visBilde('${b.bilde}')">🖼️ Se bilde</button>` : ''}
+                        <span class="kilde-tag">${kildeTekst}</span>
+                        ${b.bilde ? `<button class="bilde-knapp" onclick="visBilde('${b.bilde}')">🖼️ Bilde</button>` : ''}
                         <div style="font-size: 11px; color: #666; margin-top: 5px;">${b.melding || '-'}</div>
                     </td>
                     <td>
                         <button class="status-knapp" 
                             style="background: ${erHentet ? '#6c757d' : '#ffc107'}; color: ${erHentet ? 'white' : 'black'};"
                             onclick="markerSomHentet('${b._id}')">
-                            ${erHentet ? '↩️ Angre' : 'Marker hentet'}
+                            ${erHentet ? '↩️' : 'Hentet'}
                         </button>
                     </td>
                 </tr>`;
