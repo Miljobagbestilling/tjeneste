@@ -2,55 +2,65 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Bestillingsoversikt - Miljøbag Admin</title>
+    <title>Sjåfør Visning - Miljøbag</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
         .admin-container { 
             background: white; 
             padding: 20px; 
             border-radius: 10px; 
-            max-width: 1300px; 
+            max-width: 1200px; 
             margin: auto; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
         }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #28a745; color: white; }
+        th { background-color: #343a40; color: white; }
         tr:nth-child(even) { background-color: #f9f9f9; }
-        .status-knapp { background: #ffc107; border: none; padding: 8px 12px; border-radius: 3px; cursor: pointer; font-weight: bold; }
-        td { vertical-align: top; line-height: 1.4; }
-        small { color: #555; display: inline-block; margin-top: 4px; }
-        strong { color: #333; }
-        .hentet-rad { background-color: #e9ecef !important; color: #6c757d; }
-        .bilde-knapp { 
-            margin-top: 8px; 
-            cursor: pointer; 
-            background: #eee; 
-            border: 1px solid #ccc; 
-            border-radius: 4px; 
-            padding: 5px 10px; 
-            font-size: 12px; 
-            display: block;
+        
+        .hentet-rad { background-color: #f0f0f0 !important; opacity: 0.6; }
+        
+        /* Knapper for sjåfør */
+        .rute-hovedknapp {
+            width: 100%; padding: 15px; background: #007bff; color: white; 
+            border: none; border-radius: 8px; font-size: 16px; font-weight: bold; 
+            cursor: pointer; margin-bottom: 20px;
         }
-        .bilde-knapp:hover { background: #ddd; }
+        .rute-hovedknapp:hover { background: #0056b3; }
+        
+        .status-knapp { 
+            padding: 8px 12px; border: none; border-radius: 4px; 
+            font-weight: bold; cursor: pointer; font-size: 13px;
+        }
+        .ring-knapp {
+            display: inline-block; padding: 6px 10px; background: #28a745; 
+            color: white; text-decoration: none; border-radius: 4px; font-size: 12px;
+        }
+        .bilde-knapp { 
+            cursor: pointer; background: #eee; border: 1px solid #ccc; 
+            border-radius: 4px; padding: 4px 8px; font-size: 12px; 
+        }
+        a.kart-lenke { color: #007bff; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="admin-container">
-        <h1>Bestillinger for Miljøbag</h1>
-        <button onclick="lagKjørerute()" id="ruteKnapp" style="width:100%; padding:20px; background:#007bff; color:white; border:none; border-radius:10px; font-size:18px; font-weight:bold; cursor:pointer; margin-bottom:20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-        🗺️ Lag kjørerute (neste 10 stopp)
-        </button>
-        <div id="loading">Henter bestillinger...</div>
-        <table id="bestilling-tabell" style="display:none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h1>Sjåfør-liste</h1>
+            <a href="admin.html" style="text-decoration: none; color: #666; font-size: 14px;">⬅️ Tilbake til kontor</a>
+        </div>
+
+        <button onclick="lagKjørerute()" class="rute-hovedknapp">🗺️ Lag kjørerute (neste 10 stopp)</button>
+        
+        <div id="loading">Henter kjøreliste...</div>
+        <table id="driver-tabell" style="display:none;">
             <thead>
                 <tr>
-                    <th>Dato</th>
-                    <th>Kunde & Faktura-info</th>
-                    <th>Adresse & Sted</th>
-                    <th>Bestilling (S/M/L)</th>
-                    <th>Melding / Kanal</th>
-                    <th>Status</th>
+                    <th>Kunde</th>
+                    <th>Adresse (Kart)</th>
+                    <th>Bagger</th>
+                    <th>Info/Bilde</th>
+                    <th>Handling</th>
                 </tr>
             </thead>
             <tbody id="tabell-body"></tbody>
@@ -58,164 +68,103 @@
     </div>
 
     <script>
-    // 1. PASSORD-HÅNDTERING (Sjekker om du allerede er logget inn i denne fanen)
     let passordFraBruker = sessionStorage.getItem('admin_passord');
+    let alleData = [];
 
-    if (!passordFraBruker || passordFraBruker === "null") {
-        const input = prompt("Skriv inn passord for tilgang:");
-        if (input) {
-            passordFraBruker = input;
-            sessionStorage.setItem('admin_passord', input);
-        }
+    if (!passordFraBruker) {
+        passordFraBruker = prompt("Passord for sjåfør-tilgang:");
+        if (passordFraBruker) sessionStorage.setItem('admin_passord', passordFraBruker);
     }
 
-    if (passordFraBruker && passordFraBruker !== "null") {
-        hentBestillinger(passordFraBruker);
-    } else {
-        document.body.innerHTML = "<h1 style='text-align:center; margin-top:50px;'>Tilgang nektet. Oppdater siden for å prøve igjen.</h1>";
+    if (passordFraBruker) {
+        hentData();
     }
 
-    // 2. HENT DATA FRA SERVEREN
-    async function hentBestillinger(nøkkel) {
+    async function hentData() {
         try {
             const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
-                headers: { 'x-auth-key': nøkkel }
+                headers: { 'x-auth-key': passordFraBruker }
+            });
+            if (!respons.ok) throw new Error("Feil");
+            
+            alleData = await respons.json();
+            
+            // Sortering for sjåfør: Postnummer først, så adresse
+            alleData.sort((a, b) => {
+                if (a.postnummer !== b.postnummer) return a.postnummer.localeCompare(b.postnummer);
+                return a.adresse.localeCompare(b.adresse);
             });
 
-            if (!respons.ok) {
-                alert("Feil passord eller uautorisert tilgang.");
-                sessionStorage.removeItem('admin_passord'); // Sletter feil passord fra minnet
-                location.reload();
-                return;
-            }
-
-            const data = await respons.json();
-            
-            data.sort((a, b) => {
-            // Først sorter på postnummer
-            if (a.postnummer !== b.postnummer) {
-            return a.postnummer.localeCompare(b.postnummer);
-            }
-            // Deretter på adresse innad i postnummeret
-            return a.adresse.localeCompare(b.adresse);
-            });
-            // Lagre dataen globalt så rute-knappen kan bruke den
-            window.alleData = data;
-            
-            const tbody = document.getElementById('tabell-body');
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('bestilling-tabell').style.display = 'table';
-            tbody.innerHTML = "";
-
-            data.forEach(b => {
-                const dato = new Date(b.dato).toLocaleDateString('no-NO');
-                const adresseFull = `${b.adresse}, ${b.postnummer} ${b.poststed}`;
-                const kartURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseFull)}`;
-                
-                const erHentet = b.hentet === true;
-                const radStil = erHentet ? 'class="hentet-rad"' : '';
-                const kanalStatus = b.fraQR ? '📱 QR' : '💻 Web';
-
-                // Bilde-knapp logikk
-                const bildeKnapp = b.bilde ? 
-                    `<button class="bilde-knapp" onclick="visBilde('${b.bilde}')">🖼️ Se bilde</button>` : 
-                    '';
-
-                const kundeInfo = `
-                    <strong>${b.firmaNavn || b.kontaktperson}</strong><br>
-                    <small>
-                        ${b.epost}<br>
-                        Org: ${b.orgNr || 'Privat'}<br>
-                        Tlf: ${b.telefon}
-                    </small>
-                `;
-
-                const bagDetaljer = `${b.antallSmall || 0}S / ${b.antallMedium || 0}M / ${b.antallLarge || 0}L`;
-                const knappTekst = erHentet ? '↩️ Angre' : 'Marker hentet';
-                const knappStil = erHentet ? 'style="background: #6c757d; color: white;"' : '';
-
-                const rad = `
-                    <tr ${radStil}>
-                        <td>${dato}</td>
-                        <td>
-                            ${kundeInfo}<br>
-                            <a href="tel:${b.telefon}" style="display: inline-block; margin-top: 5px; padding: 5px; background: #eee; border-radius: 5px; text-decoration: none; color: black; font-size: 12px;">📞 Ring</a>
-                        </td>
-                        <td>
-                            <a href="${kartURL}" target="_blank" style="text-decoration: none; color: #007bff; font-weight: bold;">📍 ${adresseFull}</a>
-                        </td>
-                        <td><strong>${bagDetaljer}</strong></td>
-                        <td>
-                            <small>${b.melding || '-'}</small><br>
-                            <strong>${kanalStatus}</strong>
-                            ${bildeKnapp}
-                        </td>
-                        <td>
-                            <button class="status-knapp" ${knappStil} onclick="markerSomHentet('${b._id}')">
-                                ${knappTekst}
-                            </button>
-                        </td>
-                    </tr>`;
-                tbody.innerHTML += rad;
-            });
-            
+            oppdaterTabell();
         } catch (err) {
-            console.error(err);
-            document.getElementById('loading').innerText = 'Kunne ikke koble til serveren.';
+            document.getElementById('loading').innerText = "Kunne ikke laste liste.";
         }
     }
 
-    // 3. FUNKSJON FOR Å VISE BILDE
-    function visBilde(base64Data) {
-        const bildeVindu = window.open("");
-        bildeVindu.document.write(`
-            <html>
-                <head><title>Bilde fra kunde</title></head>
-                <body style="margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh;">
-                    <img src="${base64Data}" style="max-width:100%; max-height:100%; object-fit:contain;">
-                </body>
-            </html>
-        `);
+    function oppdaterTabell() {
+        const tbody = document.getElementById('tabell-body');
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('driver-tabell').style.display = 'table';
+        tbody.innerHTML = "";
+
+        alleData.forEach(b => {
+            const erHentet = b.hentet === true;
+            const radStil = erHentet ? 'class="hentet-rad"' : '';
+            const adresseFull = `${b.adresse}, ${b.postnummer} ${b.poststed}`;
+            const kartURL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(adresseFull)}`;
+
+            const rad = `
+                <tr ${radStil}>
+                    <td>
+                        <strong>${b.firmaNavn || b.kontaktperson}</strong><br>
+                        <a href="tel:${b.telefon}" class="ring-knapp">📞 Ring</a>
+                    </td>
+                    <td>
+                        <a href="${kartURL}" target="_blank" class="kart-lenke">📍 ${b.adresse}</a><br>
+                        <small>${b.postnummer} ${b.poststed}</small>
+                    </td>
+                    <td><strong>${b.antallSmall}S / ${b.antallMedium}M / ${b.antallLarge}L</strong></td>
+                    <td>
+                        ${b.bilde ? `<button class="bilde-knapp" onclick="visBilde('${b.bilde}')">🖼️ Se bilde</button>` : ''}
+                        <div style="font-size: 11px; color: #666; margin-top: 5px;">${b.melding || '-'}</div>
+                    </td>
+                    <td>
+                        <button class="status-knapp" 
+                            style="background: ${erHentet ? '#6c757d' : '#ffc107'}; color: ${erHentet ? 'white' : 'black'};"
+                            onclick="markerSomHentet('${b._id}')">
+                            ${erHentet ? '↩️ Angre' : 'Marker hentet'}
+                        </button>
+                    </td>
+                </tr>`;
+            tbody.innerHTML += rad;
+        });
     }
 
-    // 4. MARKER SOM HENTET
     async function markerSomHentet(id) {
         try {
-            const response = await fetch(`https://miljobag-backend.onrender.com/api/bestilling/${id}/status`, {
+            const res = await fetch(`https://miljobag-backend.onrender.com/api/bestilling/${id}/status`, {
                 method: 'PATCH',
                 headers: { 'x-auth-key': passordFraBruker }
             });
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Kunne ikke oppdatere. Prøv passordet på nytt.');
-            }
-        } catch (err) {
-            alert('Tilkoblingsfeil.');
-        }
+            if (res.ok) hentData();
+        } catch (err) { alert("Feil ved oppdatering"); }
     }
 
     function lagKjørerute() {
-    // Finn alle som ikke er hentet ennå
-    // 'data' må være tilgjengelig globalt i scriptet ditt
-    const uhentede = alleData.filter(b => !b.hentet); 
-    
-    if (uhentede.length === 0) return alert("Ingen uhentede poser på listen!");
+        const uhentede = alleData.filter(b => !b.hentet);
+        if (uhentede.length === 0) return alert("Ingen uhentede poser!");
 
-    // Vi tar de neste 10 stoppene for å ikke overskride Google sin grense
-    const stopp = uhentede.slice(0, 10);
-    const destinasjon = stopp[stopp.length - 1];
-    const viaStopp = stopp.slice(0, -1);
+        const stopp = uhentede.slice(0, 10);
+        const destinasjon = encodeURIComponent(`${stopp[stopp.length-1].adresse}, ${stopp[stopp.length-1].postnummer}`);
+        const waypoints = stopp.slice(0, -1).map(s => encodeURIComponent(`${s.adresse}, ${s.postnummer}`)).join('|');
+        
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destinasjon}&waypoints=${waypoints}&travelmode=driving`, '_blank');
+    }
 
-    const startAdresse = encodeURIComponent(`${stopp[0].adresse}, ${stopp[0].postnummer}`);
-    const destAdresse = encodeURIComponent(`${destinasjon.adresse}, ${destinasjon.postnummer}`);
-    const waypoints = viaStopp.map(s => encodeURIComponent(`${s.adresse}, ${s.postnummer}`)).join('|');
-
-    // Åpner Google Maps med ruteplanlegger
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${destAdresse}&waypoints=${waypoints}&travelmode=driving`;
-    
-    window.open(url, '_blank');
-}
-</script>
+    function visBilde(base64Data) {
+        const win = window.open("");
+        win.document.write(`<body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;"><img src="${base64Data}" style="max-width:100%;max-height:100vh;"></body>`);
+    }
+    </script>
 </body>
 </html>
