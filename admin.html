@@ -32,6 +32,17 @@
             font-size: 12px; 
         }
     </style>
+
+    <link rel="manifest" href="manifest.json?v=2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+    </script>
 </head>
 <body>
     <div class="admin-container">
@@ -57,16 +68,19 @@
     </div>
 
     <script>
-    let passordFraBruker = sessionStorage.getItem('admin_passord');
+    // Bytt ut de øverste linjene i scriptet ditt med dette:
+let passordFraBruker = localStorage.getItem('admin_passord');
 
-    if (!passordFraBruker) {
-        passordFraBruker = prompt("Passord for kontortilgang:");
-        if (passordFraBruker) sessionStorage.setItem('admin_passord', passordFraBruker);
-    }
-
+if (!passordFraBruker) {
+    passordFraBruker = prompt("Passord for kontortilgang (vil bli husket):");
     if (passordFraBruker) {
-        hentData();
+        localStorage.setItem('admin_passord', passordFraBruker);
     }
+}
+
+if (passordFraBruker) {
+    hentData(); // Eller navnet på din start-funksjon
+}
 
     async function hentData() {
         try {
