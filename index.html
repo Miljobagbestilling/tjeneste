@@ -18,6 +18,24 @@
         button:hover { background: #218838; }
         button:disabled { background: #ccc; cursor: not-allowed; }
     </style>
+
+    <link rel="manifest" href="manifest-index.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="logo.png">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+
 </head>
 <body>
 
@@ -72,7 +90,7 @@
         
           
         <div style="margin-bottom: 20px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa;">
-        <label style="display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px;">Valgfritt: Vis oss hvor baggen står</label>
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px;">Valgfritt: Vis oss hvor baggen står og hva den inneholder</label>
     
         <input type="file" id="bilde" accept="image/*" style="display: none;" onchange="visFilnavn(this)">
     
