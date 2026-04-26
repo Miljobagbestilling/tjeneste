@@ -127,11 +127,13 @@
 
     function visFilnavn(input) {
     const status = document.getElementById('fil-valgt');
-    if (input.files && input.files[0]) {
-        status.innerText = "✅ Bilde er valgt";
-        status.style.color = "green";
+    const antall = input.files.length;
+    
+    if (antall > 0) {
+        status.innerText = `✅ ${antall} bilde(r) er valgt`;
+        status.style.color = "#28a745";
     } else {
-        status.innerText = "Ingen fil valgt";
+        status.innerText = "Ingen filer valgt";
         status.style.color = "#666";
     }
 }
