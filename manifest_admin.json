@@ -1,0 +1,7 @@
+{
+  "short_name": "MB Kontor",
+  "name": "Miljøbag Kontor",
+  "start_url": "admin.html",
+  "display": "standalone",
+  "icons": [{ "src": "logo.png", "sizes": "512x512", "type": "image/png" }]
+}
