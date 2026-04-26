@@ -70,17 +70,20 @@
             </div>
         </div>
         
-        <div style="margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #ccc;">
-        <label for="bilde" style="display: block; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Legg ved bilde av baggene (valgfritt):</label>
+          
+        <div style="margin-bottom: 20px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa;">
+        <label style="display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px;">Valgfritt: Vis oss hvor baggen står</label>
+    
         <input type="file" id="bilde" accept="image/*" style="display: none;" onchange="visFilnavn(this)">
-        <button type="button" onclick="document.getElementById('bilde').click()" class="bilde-knapp">
-        📷 Last opp eller ta bilde av plassering
+    
+        <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" onclick="document.getElementById('bilde').click()" 
+            style="padding: 8px 12px; background: #e9ecef; color: #495057; border: 1px solid #ced4da; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 600;">
+            📷 Last opp bilde
         </button>
-        <span id="fil-valgt" style="font-size: 12px; color: #666; margin-left: 10px;">Ingen fil valgt</span>
-        <small style="color: #666; display: block; margin-top: 5px;">Dette hjelper oss å finne baggene raskere.</small>
+        <span id="fil-valgt" style="font-size: 12px; color: #666;">Ingen fil valgt</span>
         </div>
-       
-        
+</div>
 
         <textarea id="melding" rows="4" placeholder="Beskrivelse av hentested eller annen nyttig informasjon"></textarea>
         
