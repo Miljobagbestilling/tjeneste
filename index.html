@@ -19,8 +19,20 @@
         button:disabled { background: #ccc; cursor: not-allowed; }
         
         /* Stil for adressesøk */
-        #adresse-forslag { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; z-index: 1000; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 5px 5px; }
-        #adresse-forslag div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
+        #adresse-forslag { 
+            position: absolute; 
+            width: 100%; 
+            background: white; 
+            border: 1px solid #ccc; 
+            border-top: none; 
+            z-index: 9999; /* Sikrer at den ligger øverst */
+            display: none; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            border-radius: 0 0 5px 5px; 
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        #adresse-forslag div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; background: white; }
         #adresse-forslag div:hover { background-color: #f0f0f0; }
     </style>
 
@@ -64,7 +76,7 @@
         
         <div style="position: relative; margin-bottom: 10px;">
             <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em;">Adresse for henting:</label>
-            <input type="text" id="adresse" placeholder="Søk på din adresse..." autocomplete="off" required>
+            <input type="text" id="adresse" placeholder="Begynn å skrive din adresse..." autocomplete="off" required>
             <div id="adresse-forslag"></div>
         </div>
 
@@ -118,6 +130,7 @@
         }
 
         try {
+            // Prøver med proxy for å unngå CORS-feil
             const url = `https://corsproxy.io/?${encodeURIComponent('https://ws.geonorge.no/adresser/v1/sok?sok=' + sok + '&treffPerSide=5&fuzzy=true')}`;
             const respons = await fetch(url);
             const data = await respons.json();
@@ -161,7 +174,13 @@
         }
     }
 
-    fetch('https://miljobag-backend.onrender.com/ping').catch(e => {});
+    const lesBilde = (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+        });
+    };
 
     const urlParams = new URLSearchParams(window.location.search);
     const erFraQR = urlParams.get('kilde') === 'qr';
@@ -184,4 +203,59 @@
         `;
     }
 
-    const lesBilde = (file) => {
+    document.getElementById('bestillingsSkjema').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const knapp = document.getElementById('bestillKnapp');
+        knapp.innerText = "Sender bestilling...";
+        knapp.disabled = true;
+
+        const bildeFiler = document.getElementById('bilde').files;
+        let bildeData = "";
+        
+        if (bildeFiler.length > 0) {
+            bildeData = await lesBilde(bildeFiler[0]);
+        }
+
+        const data = {
+            firmaNavn: document.getElementById('firmaNavn').value,
+            kontaktperson: document.getElementById('kontaktperson').value,
+            orgNr: document.getElementById('orgNr').value,
+            telefon: document.getElementById('telefon').value,
+            epost: document.getElementById('epost').value,
+            adresse: adresseInput.value,
+            postnummer: document.getElementById('postnummer').value,
+            poststed: document.getElementById('poststed').value,
+            antallSmall: document.getElementById('antallSmall').value,
+            antallMedium: document.getElementById('antallMedium').value,
+            antallLarge: document.getElementById('antallLarge').value,
+            melding: document.getElementById('melding').value,
+            fraQR: erFraQR,
+            bilde: bildeData
+        };
+
+        try {
+            const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (respons.ok) {
+                alert('Takk! Vi har mottatt din bestilling.');
+                document.getElementById('bestillingsSkjema').reset();
+                document.getElementById('fil-valgt').innerText = "Ingen filer valgt";
+            } else {
+                alert('Noe gikk galt på serveren.');
+            }
+        } catch (feil) {
+            alert('Kunne ikke koble til serveren.');
+        } finally {
+            knapp.disabled = false;
+            knapp.innerText = "Bestill henting";
+        }
+    });
+
+    fetch('https://miljobag-backend.onrender.com/ping').catch(e => {});
+</script>
+</body>
+</html>
