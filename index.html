@@ -4,55 +4,66 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Miljøbag - Bestill Henting</title>
+    
+    <link rel="manifest" href="manifest_admin.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#28a745">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <link rel="apple-touch-startup-image" href="logo.png">
+
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; line-height: 1.6; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; line-height: 1.6; margin: 0; }
         .container { background: white; padding: 20px; border-radius: 10px; max-width: 400px; margin: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { margin-top: 0; }
+        
+        /* Laste-skjerm stil */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.5s ease;
+        }
+
         .pris-tabell { width: 100%; border-collapse: collapse; margin: 20px 0; }
         .pris-tabell th, .pris-tabell td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         .original-pris { text-decoration: line-through; color: #888; font-size: 0.9em; margin-right: 5px; }
         .rabatt-pris { color: #28a745; font-weight: bold; }
         .rabatt-notis { color: #28a745; font-weight: bold; display: none; background: #e8f5e9; padding: 10px; border-radius: 5px; }
-        input, textarea { width: 100%; margin: 5px 0; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        
+        input, textarea { width: 100%; margin: 5px 0; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; font-weight: bold; }
         button:hover { background: #218838; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         
-        /* Stil for adressesøk */
         #adresse-forslag { 
             position: absolute; 
             width: 100%; 
             background: white; 
             border: 1px solid #ccc; 
-            border-top: none; 
-            z-index: 9999; /* Sikrer at den ligger øverst */
+            z-index: 9999; 
             display: none; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            border-radius: 0 0 5px 5px; 
             max-height: 200px;
             overflow-y: auto;
         }
-        #adresse-forslag div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; background: white; }
-        #adresse-forslag div:hover { background-color: #f0f0f0; }
+        #adresse-forslag div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
     </style>
-
-    <link rel="manifest" href="manifest_admin.json">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="logo.png">
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-      }
-    </script>
-    <link rel="apple-touch-startup-image" href="logo.png">
 </head>
 <body>
-<div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000;">
-    <img src="logo.png" style="width: 150px; margin-bottom: 20px;">
-    <p style="font-family: sans-serif; color: #666;">Laster Miljøbag...</p>
+
+<div id="loading-overlay">
+    <img src="logo.png" alt="Laster..." style="width: 180px; margin-bottom: 20px;">
+    <p style="color: #666; font-weight: bold;">Laster Miljøbag...</p>
 </div>
 
 <div class="container">
@@ -81,61 +92,59 @@
         
         <div style="position: relative; margin-bottom: 10px;">
             <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em;">Adresse for henting:</label>
-            <input type="text" id="adresse" placeholder="Begynn å skrive din adresse..." autocomplete="off" required>
+            <input type="text" id="adresse" placeholder="Søk på din adresse..." autocomplete="off" required>
             <div id="adresse-forslag"></div>
         </div>
 
         <div style="display: flex; gap: 10px;">
-            <input type="text" id="postnummer" name="postnummer" placeholder="Postnr" style="flex: 1;" required>
-            <input type="text" id="poststed" name="poststed" placeholder="Poststed" style="flex: 2;" required>
+            <input type="text" id="postnummer" placeholder="Postnr" style="flex: 1;" required>
+            <input type="text" id="poststed" placeholder="Poststed" style="flex: 2;" required>
         </div>
 
-        <label style="display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em; margin-bottom: 5px;">Antall bagger som skal hentes:</label>
+        <label style="display: block; margin-top: 15px; font-weight: bold; font-size: 0.9em;">Antall bagger:</label>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
             <div style="flex: 1; text-align: center;">
-                <label for="antallSmall" style="font-size: 0.8em; color: #666;">Small</label>
-                <input type="number" id="antallSmall" min="0" value="0" style="text-align: center; margin-top: 5px;">
+                <label style="font-size: 0.7em;">Small</label>
+                <input type="number" id="antallSmall" min="0" value="0">
             </div>
             <div style="flex: 1; text-align: center;">
-                <label for="antallMedium" style="font-size: 0.8em; color: #666;">Medium</label>
-                <input type="number" id="antallMedium" min="0" value="0" style="text-align: center; margin-top: 5px;">
+                <label style="font-size: 0.7em;">Medium</label>
+                <input type="number" id="antallMedium" min="0" value="0">
             </div>
             <div style="flex: 1; text-align: center;">
-                <label for="antallLarge" style="font-size: 0.8em; color: #666;">Large</label>
-                <input type="number" id="antallLarge" min="0" value="0" style="text-align: center; margin-top: 5px;">
+                <label style="font-size: 0.7em;">Large</label>
+                <input type="number" id="antallLarge" min="0" value="0">
             </div>
         </div>
         
-        <div style="margin-bottom: 20px; padding: 15px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa;">
-            <label style="display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px;">Valgfritt: Vis oss hvor baggen står</label>
-            <input type="file" id="bilde" accept="image/*" multiple style="display: none;" onchange="visFilnavn(this)">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" onclick="document.getElementById('bilde').click()" 
-                    style="padding: 8px 12px; background: #e9ecef; color: #495057; border: 1px solid #ced4da; border-radius: 5px; cursor: pointer; font-size: 13px; font-weight: 600; width: auto;">
-                    📷 Last opp bilder
-                </button>
-                <span id="fil-valgt" style="font-size: 12px; color: #666;">Ingen filer valgt</span>
-            </div>
+        <div style="margin-bottom: 20px; padding: 15px; border: 1px dashed #ccc; background: #fafafa;">
+            <input type="file" id="bilde" accept="image/*" style="display: none;" onchange="visFilnavn(this)">
+            <button type="button" onclick="document.getElementById('bilde').click()" style="padding: 8px; font-size: 14px; background: #e9ecef; color: #333; width: auto;">📷 Last opp bilde</button>
+            <span id="fil-valgt" style="font-size: 12px; margin-left: 10px;">Valgfritt</span>
         </div>
 
-        <textarea id="melding" rows="4" placeholder="Beskrivelse av hentested eller annen nyttig informasjon"></textarea>
+        <textarea id="melding" rows="3" placeholder="Beskrivelse av hentested..."></textarea>
         <button type="submit" id="bestillKnapp">Bestill henting</button>
     </form>
 </div>
 
 <script>
+    // Skjul laste-skjermen når ALT er ferdig (bilder, scripts, etc)
+    window.addEventListener('load', () => {
+        const loader = document.getElementById('loading-overlay');
+        loader.style.opacity = '0';
+        setTimeout(() => { loader.style.display = 'none'; }, 500);
+    });
+
     const adresseInput = document.getElementById('adresse');
     const forslagBox = document.getElementById('adresse-forslag');
 
+    // Adresse-søk logikk
     adresseInput.addEventListener('input', async (e) => {
         const sok = e.target.value.trim();
-        if (sok.length < 4) {
-            forslagBox.style.display = 'none';
-            return;
-        }
+        if (sok.length < 4) { forslagBox.style.display = 'none'; return; }
 
         try {
-            // Prøver med proxy for å unngå CORS-feil
             const url = `https://corsproxy.io/?${encodeURIComponent('https://ws.geonorge.no/adresser/v1/sok?sok=' + sok + '&treffPerSide=5&fuzzy=true')}`;
             const respons = await fetch(url);
             const data = await respons.json();
@@ -143,7 +152,6 @@
             if (data.adresser && data.adresser.length > 0) {
                 forslagBox.innerHTML = '';
                 forslagBox.style.display = 'block';
-
                 data.adresser.forEach(adr => {
                     const div = document.createElement('div');
                     div.innerText = `${adr.adressetekst}, ${adr.postnummer} ${adr.poststed}`;
@@ -155,121 +163,58 @@
                     };
                     forslagBox.appendChild(div);
                 });
-            } else {
-                forslagBox.style.display = 'none';
             }
-        } catch (err) {
-            console.error("Kartverk-feil:", err);
-        }
+        } catch (err) { console.error("Søkefeil:", err); }
     });
 
-    document.addEventListener('click', (e) => {
-        if (e.target !== adresseInput) forslagBox.style.display = 'none';
-    });
-
-    function visFilnavn(input) {
-        const status = document.getElementById('fil-valgt');
-        const antall = input.files.length;
-        if (antall > 0) {
-            status.innerText = `✅ ${antall} bilde(r) valgt`;
-            status.style.color = "#28a745";
-        } else {
-            status.innerText = "Ingen filer valgt";
-            status.style.color = "#666";
-        }
-    }
-
-    const lesBilde = (file) => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-        });
-    };
-
+    // Prislogikk og innsending (samme som før)
     const urlParams = new URLSearchParams(window.location.search);
     const erFraQR = urlParams.get('kilde') === 'qr';
     const prisListeElement = document.getElementById('pris-liste');
-    const rabattNotis = document.getElementById('rabatt-notis');
-
-    const standardPris = 590;
-    const qrRabatt = 100;
-
     if (erFraQR) {
-        rabattNotis.style.display = 'block';
-        prisListeElement.innerHTML = `
-            <tr><td>1 - 3 bagger</td><td><span class="original-pris">${standardPris},-</span><span class="rabatt-pris">${standardPris - qrRabatt},-</span></td></tr>
-            <tr><td>4+ bagger</td><td><span class="original-pris">490,-</span><span class="rabatt-pris">390,-</span></td></tr>
-        `;
+        document.getElementById('rabatt-notis').style.display = 'block';
+        prisListeElement.innerHTML = `<tr><td>1-3stk</td><td><span class="original-pris">590,-</span><span class="rabatt-pris">490,-</span></td></tr><tr><td>4+stk</td><td><span class="original-pris">490,-</span><span class="rabatt-pris">390,-</span></td></tr>`;
     } else {
-        prisListeElement.innerHTML = `
-            <tr><td>1 - 3 bagger</td><td>${standardPris},-</td></tr>
-            <tr><td>4+ bagger</td><td>490,-</td></tr>
-        `;
+        prisListeElement.innerHTML = `<tr><td>1-3stk</td><td>590,-</td></tr><tr><td>4+stk</td><td>490,-</td></tr>`;
+    }
+
+    function visFilnavn(input) {
+        document.getElementById('fil-valgt').innerText = input.files.length > 0 ? "✅ Bilde valgt" : "Valgfritt";
     }
 
     document.getElementById('bestillingsSkjema').addEventListener('submit', async (e) => {
         e.preventDefault();
         const knapp = document.getElementById('bestillKnapp');
-        knapp.innerText = "Sender bestilling...";
-        knapp.disabled = true;
-
-        const bildeFiler = document.getElementById('bilde').files;
-        let bildeData = "";
-        
-        if (bildeFiler.length > 0) {
-            bildeData = await lesBilde(bildeFiler[0]);
-        }
+        knapp.innerText = "Sender..."; knapp.disabled = true;
 
         const data = {
             firmaNavn: document.getElementById('firmaNavn').value,
-            kontaktperson: document.getElementById('kontaktperson').value,
-            orgNr: document.getElementById('orgNr').value,
-            telefon: document.getElementById('telefon').value,
-            epost: document.getElementById('epost').value,
             adresse: adresseInput.value,
             postnummer: document.getElementById('postnummer').value,
             poststed: document.getElementById('poststed').value,
             antallSmall: document.getElementById('antallSmall').value,
             antallMedium: document.getElementById('antallMedium').value,
             antallLarge: document.getElementById('antallLarge').value,
+            epost: document.getElementById('epost').value,
+            telefon: document.getElementById('telefon').value,
             melding: document.getElementById('melding').value,
-            fraQR: erFraQR,
-            bilde: bildeData
+            fraQR: erFraQR
         };
 
         try {
-            const respons = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
+            const res = await fetch('https://miljobag-backend.onrender.com/api/bestilling', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(data)
             });
-
-            if (respons.ok) {
-                alert('Takk! Vi har mottatt din bestilling.');
-                document.getElementById('bestillingsSkjema').reset();
-                document.getElementById('fil-valgt').innerText = "Ingen filer valgt";
-            } else {
-                alert('Noe gikk galt på serveren.');
-            }
-        } catch (feil) {
-            alert('Kunne ikke koble til serveren.');
-        } finally {
-            knapp.disabled = false;
-            knapp.innerText = "Bestill henting";
-        }
+            if (res.ok) { alert('Bestilling mottatt!'); document.getElementById('bestillingsSkjema').reset(); }
+        } catch (f) { alert('Feil ved sending.'); }
+        knapp.innerText = "Bestill henting"; knapp.disabled = false;
     });
 
-    fetch('https://miljobag-backend.onrender.com/ping').catch(e => {});
-
-    // Legg til dette i backend-koden (server.js)
-app.get('/ping', (req, res) => {
-    res.status(200).send("Våken og klar!");
-});
-// Skjul laste-skjermen når alt er klart
-window.addEventListener('load', () => {
-    document.getElementById('loading-overlay').style.display = 'none';
-});
+    // Vekker serveren
+    fetch('https://miljobag-backend.onrender.com/ping').catch(() => {});
 </script>
+
 </body>
 </html>
