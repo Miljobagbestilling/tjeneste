@@ -25,6 +25,7 @@
     </style>
 
     <link rel="manifest" href="manifest_admin.json">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="logo.png">
@@ -117,7 +118,7 @@
         }
 
         try {
-            const url = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodeURIComponent(sok)}&treffPerSide=5&fuzzy=true`;
+            const url = `https://corsproxy.io/?${encodeURIComponent('https://ws.geonorge.no/adresser/v1/sok?sok=' + sok + '&treffPerSide=5&fuzzy=true')}`;
             const respons = await fetch(url);
             const data = await respons.json();
 
