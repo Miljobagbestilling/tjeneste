@@ -47,8 +47,13 @@
         navigator.serviceWorker.register('sw.js');
       }
     </script>
+    <link rel="apple-touch-startup-image" href="logo.png">
 </head>
 <body>
+<div id="loading-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000;">
+    <img src="logo.png" style="width: 150px; margin-bottom: 20px;">
+    <p style="font-family: sans-serif; color: #666;">Laster Miljøbag...</p>
+</div>
 
 <div class="container">
     <img src="logo.png" alt="Miljøbag Logo" style="display: block; max-width: 200px; margin: 0 auto 20px auto;">
@@ -256,6 +261,15 @@
     });
 
     fetch('https://miljobag-backend.onrender.com/ping').catch(e => {});
+
+    // Legg til dette i backend-koden (server.js)
+app.get('/ping', (req, res) => {
+    res.status(200).send("Våken og klar!");
+});
+// Skjul laste-skjermen når alt er klart
+window.addEventListener('load', () => {
+    document.getElementById('loading-overlay').style.display = 'none';
+});
 </script>
 </body>
 </html>

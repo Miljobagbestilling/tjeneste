@@ -1,0 +1,21 @@
+{
+  "name": "Miljøbag Bestilling",
+  "short_name": "Miljøbag",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#28a745",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
