@@ -19,10 +19,12 @@
         button:disabled { background: #ccc; cursor: not-allowed; }
         
         /* Stil for adressesøk */
+        #adresse-forslag { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; z-index: 1000; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 0 0 5px 5px; }
+        #adresse-forslag div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; }
         #adresse-forslag div:hover { background-color: #f0f0f0; }
     </style>
 
-    <link rel="manifest" href="manifest_admin.json">
+    <link rel="manifest" href="manifest-bestilling.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="logo.png">
@@ -62,7 +64,7 @@
         <div style="position: relative; margin-bottom: 10px;">
             <label style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em;">Adresse for henting:</label>
             <input type="text" id="adresse" placeholder="Søk på din adresse..." autocomplete="off" required>
-            <div id="adresse-forslag" style="position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; z-index: 1000; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+            <div id="adresse-forslag"></div>
         </div>
 
         <div style="display: flex; gap: 10px;">
@@ -107,24 +109,24 @@
     const adresseInput = document.getElementById('adresse');
     const forslagBox = document.getElementById('adresse-forslag');
 
-    // Adressesøk mot Kartverket
     adresseInput.addEventListener('input', async (e) => {
-        const sok = e.target.value;
+        const sok = e.target.value.trim();
         if (sok.length < 4) {
             forslagBox.style.display = 'none';
             return;
         }
+
         try {
-            const respons = await fetch(`https://ws.geonorge.no/adresser/v1/sok?sok=${encodeURIComponent(sok)}&treffPerSide=5`);
+            const url = `https://ws.geonorge.no/adresser/v1/sok?sok=${encodeURIComponent(sok)}&treffPerSide=5&fuzzy=true`;
+            const respons = await fetch(url);
             const data = await respons.json();
+
             if (data.adresser && data.adresser.length > 0) {
                 forslagBox.innerHTML = '';
                 forslagBox.style.display = 'block';
+
                 data.adresser.forEach(adr => {
                     const div = document.createElement('div');
-                    div.style.padding = '10px';
-                    div.style.cursor = 'pointer';
-                    div.style.borderBottom = '1px solid #eee';
                     div.innerText = `${adr.adressetekst}, ${adr.postnummer} ${adr.poststed}`;
                     div.onclick = () => {
                         adresseInput.value = adr.adressetekst;
@@ -138,7 +140,7 @@
                 forslagBox.style.display = 'none';
             }
         } catch (err) {
-            console.error("Feil ved henting av adresser:", err);
+            console.error("Kartverk-feil:", err);
         }
     });
 
@@ -158,10 +160,8 @@
         }
     }
 
-    // Vekker serveren
     fetch('https://miljobag-backend.onrender.com/ping').catch(e => {});
 
-    // Prislogikk
     const urlParams = new URLSearchParams(window.location.search);
     const erFraQR = urlParams.get('kilde') === 'qr';
     const prisListeElement = document.getElementById('pris-liste');
@@ -183,9 +183,4 @@
         `;
     }
 
-    // Konvertering av bilder
     const lesBilde = (file) => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () =>
